@@ -975,7 +975,7 @@ Metric calculations must:
 
 ```text
 confirmly/
-├── config/
+├── confirmlybe/
 │   ├── settings/
 │   ├── urls.py
 │   └── celery.py

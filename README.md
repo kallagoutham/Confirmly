@@ -23,7 +23,36 @@ The initial product will support:
 
 ## Project status
 
-Confirmly is currently in the initial project setup phase. This README will evolve alongside the implementation.
+The first backend foundation is implemented:
+
+- Django project configuration with SQLite for local development and PostgreSQL via environment variables
+- Business, customer, appointment, and immutable appointment-event models
+- Tenant-scoped customer and appointment REST APIs
+- Appointment creation/update validation and event recording
+- Pagination, search, filtering, and tenant-isolation tests
+
+Lifecycle transitions, risk scoring, reminders, public action links, and the dashboard are the next implementation slices.
+
+## Local development
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+Run the automated test suite with:
+
+```bash
+python manage.py test
+```
+
+Copy `.env.example` to `.env` and set the local credentials. Django loads this file
+automatically. SQLite is used only when `POSTGRES_DB` is unset; otherwise Django uses
+`POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, and `POSTGRES_PORT`.
 
 ## Requirements
 
