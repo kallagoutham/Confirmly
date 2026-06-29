@@ -44,6 +44,16 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
+Common shortcuts are available in the [Makefile](Makefile):
+
+```bash
+make help  # to list all the make commands that are available
+make run   # start the Django development server
+make m     # apply database migrations
+make mm    # create migrations for model changes
+make test  # run the automated test suite
+```
+
 Run the automated test suite with:
 
 ```bash
