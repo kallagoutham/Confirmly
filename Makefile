@@ -1,18 +1,25 @@
-PYTHON := $(shell if [ -x .venv/bin/python ]; then echo .venv/bin/python; else echo python; fi)
-MANAGE := $(PYTHON) manage.py
+ENV_FILE ?= dbconnection.env
+COMPOSE := ENV_FILE=$(ENV_FILE) docker compose --env-file $(ENV_FILE)
+MANAGE := $(COMPOSE) run --rm web python manage.py
 
-.PHONY: help install setup run m mm test shell superuser check clean-pyc
+.PHONY: help build run stop restart logs m mm test shell superuser check clean-pyc
 
 help: ## Show available Make commands.
 	@awk 'BEGIN {FS = ":.*##"; printf "Available commands:\n"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  %-12s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-install: ## Install Python dependencies from requirements.txt.
-	$(PYTHON) -m pip install -r requirements.txt
+build: ## Build Docker Compose services.
+	$(COMPOSE) build
 
-setup: install m ## Install dependencies and apply database migrations.
+run: ## Start all Docker Compose services.
+	$(COMPOSE) up --build
 
-run: ## Start the Django development server.
-	$(MANAGE) runserver
+stop: ## Safely stop Docker Compose services without deleting containers or volumes.
+	$(COMPOSE) stop
+
+restart: stop run ## Safely restart Docker Compose services.
+
+logs: ## Follow Docker Compose service logs.
+	$(COMPOSE) logs -f
 
 m: ## Apply database migrations.
 	$(MANAGE) migrate
@@ -33,5 +40,5 @@ check: ## Run Django system checks.
 	$(MANAGE) check
 
 clean-pyc: ## Remove Python cache files.
-	find . -type d -name "__pycache__" -prune -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete
+	$(COMPOSE) run --rm web find . -type d -name "__pycache__" -prune -exec rm -rf {} +
+	$(COMPOSE) run --rm web find . -type f -name "*.pyc" -delete
