@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan repository for exposed secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check commit message style
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            RANGE="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          else
+            RANGE="${{ github.event.before }}..${{ github.sha }}"
+          fi
+
+          if [[ "$RANGE" == 0000000000000000000000000000000000000000..* ]]; then
+            RANGE="${{ github.sha }}"
+          fi
+
+          git log --format=%s "$RANGE" > /tmp/commit-subjects.txt
+
+          invalid_messages="$(grep -Ev '^(feat|fix|docs|style|refactor|test|chore|ci|build|perf)(\([a-z0-9._-]+\))?: .{3,72}$' /tmp/commit-subjects.txt || true)"
+
+          if [[ -n "$invalid_messages" ]]; then
+            echo "Commit messages should use Conventional Commit style:"
+            echo "  type(optional-scope): short summary"
+            echo
+            echo "Allowed types: feat, fix, docs, style, refactor, test, chore, ci, build, perf"
+            echo "Summary length: 3-72 characters"
+            echo
+            echo "Invalid commit subject(s):"
+            echo "$invalid_messages"
+            exit 1
+          fi
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Check formatting and linting
+        run: |
+          isort . --check-only
+          black . --check
+          flake8 .
+
+      - name: Run Django checks
+        run: python manage.py check
+
+      - name: Run Django tests
+        run: python manage.py test
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Check formatting
+        working-directory: frontend
+        run: npx prettier --check "**/*.{jsx,json,css}"
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
