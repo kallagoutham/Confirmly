@@ -53,3 +53,7 @@ Thumbs.db
 # Local runtime data
 tmp/
 *.pid
+
+# Frontend
+frontend/node_modules/
+frontend/dist/

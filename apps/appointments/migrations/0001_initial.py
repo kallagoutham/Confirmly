@@ -119,9 +119,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="appointment",
-            index=models.Index(
-                fields=["business", "scheduled_at"], name="appt_business_scheduled_idx"
-            ),
+            index=models.Index(fields=["business", "scheduled_at"], name="appt_business_scheduled_idx"),
         ),
         migrations.AddIndex(
             model_name="appointment",
@@ -139,8 +137,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="appointmentevent",
-            index=models.Index(
-                fields=["event_type", "created_at"], name="event_type_created_idx"
-            ),
+            index=models.Index(fields=["event_type", "created_at"], name="event_type_created_idx"),
         ),
     ]

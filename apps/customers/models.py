@@ -16,11 +16,8 @@ class Customer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=["business", "email"], name="unique_customer_email_per_business")
-        ]
+        constraints = [models.UniqueConstraint(fields=["business", "email"], name="unique_customer_email_per_business")]
         ordering = ["name", "id"]
 
     def __str__(self):
         return f"{self.name} <{self.email}>"
-

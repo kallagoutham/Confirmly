@@ -56,4 +56,3 @@ class AppointmentEvent(models.Model):
             models.Index(fields=["event_type", "created_at"], name="event_type_created_idx"),
         ]
         ordering = ["created_at", "id"]
-

@@ -24,4 +24,3 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     def timeline(self, request, pk=None):
         appointment = self.get_object()
         return Response(AppointmentEventSerializer(appointment.events.all(), many=True).data)
-

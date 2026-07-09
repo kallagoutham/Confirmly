@@ -14,4 +14,3 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(business=self.request.user.business)
-

@@ -14,12 +14,8 @@ class CustomerAPITests(APITestCase):
         self.user_b = user_model.objects.create_user(username="owner-b", password="test-pass")
         self.business_a = Business.objects.create(name="Business A", owner=self.user_a)
         self.business_b = Business.objects.create(name="Business B", owner=self.user_b)
-        self.customer_a = Customer.objects.create(
-            business=self.business_a, name="Alice", email="alice@example.com"
-        )
-        self.customer_b = Customer.objects.create(
-            business=self.business_b, name="Bob", email="bob@example.com"
-        )
+        self.customer_a = Customer.objects.create(business=self.business_a, name="Alice", email="alice@example.com")
+        self.customer_b = Customer.objects.create(business=self.business_b, name="Bob", email="bob@example.com")
         self.client.force_authenticate(self.user_a)
 
     def test_list_is_scoped_to_authenticated_business(self):
@@ -65,4 +61,3 @@ class BusinessRequiredTests(APITestCase):
         response = self.client.get("/api/customers/")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-

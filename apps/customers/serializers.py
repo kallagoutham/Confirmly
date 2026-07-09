@@ -39,4 +39,3 @@ class CustomerSerializer(serializers.ModelSerializer):
         if existing.exists():
             raise serializers.ValidationError("A customer with this email already exists for this business.")
         return value.lower()
-
