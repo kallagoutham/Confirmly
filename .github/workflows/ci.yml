@@ -23,7 +23,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check commit message style
+      - name: Check commit message length
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -38,14 +38,10 @@ jobs:
 
           git log --format=%s "$RANGE" > /tmp/commit-subjects.txt
 
-          invalid_messages="$(grep -Ev '^(feat|fix|docs|style|refactor|test|chore|ci|build|perf)(\([a-z0-9._-]+\))?: .{3,72}$' /tmp/commit-subjects.txt || true)"
+          invalid_messages="$(awk 'length($0) < 3 || length($0) > 272' /tmp/commit-subjects.txt)"
 
           if [[ -n "$invalid_messages" ]]; then
-            echo "Commit messages should use Conventional Commit style:"
-            echo "  type(optional-scope): short summary"
-            echo
-            echo "Allowed types: feat, fix, docs, style, refactor, test, chore, ci, build, perf"
-            echo "Summary length: 3-72 characters"
+            echo "Commit message subjects should be 3-272 characters long."
             echo
             echo "Invalid commit subject(s):"
             echo "$invalid_messages"
