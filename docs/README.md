@@ -38,8 +38,9 @@ flowchart LR
 
 The repository currently implements the foundation slice of the product:
 
-- Django project, REST framework, auth permissions, pagination, and tenant scoping.
+- Django project, REST framework, business signup, auth permissions, pagination, and tenant scoping.
 - Business, customer, appointment, and appointment-event models.
+- Business owner signup that creates a Django user and linked business.
 - Customer and appointment REST APIs with search/filter/order support.
 - Appointment create/update event recording.
 - React daily desk UI for login, customer creation, appointment creation, list views, metrics, search/filter, and timeline viewing.

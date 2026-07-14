@@ -36,21 +36,31 @@ make stop
 
 ## Required local data setup
 
-The frontend expects a Django user that has a related `Business`.
+The normal setup path is now the in-app signup form. It creates the Django user and linked `Business` together.
 
-Minimum setup:
+Minimum setup through the UI:
 
 1. Run migrations.
-2. Create a superuser.
-3. Create a `Business` in Django admin and set its owner to that user.
-4. Sign in through the frontend with that Django username and password.
+2. Open the frontend.
+3. Click `New business? Create an account`.
+4. Enter the business name, owner credentials, and timezone.
+5. Submit the form. The app signs in with the new owner credentials.
+
+Admin bootstrap is still possible for local development:
+
+1. Create a superuser.
+2. Create a `Business` in Django admin and set its owner to that user.
+3. Sign in through the frontend with that Django username and password.
+
+If you already have a Django user but no linked business, the app will reject that login and clear the saved browser credentials. Sign in with a user that owns a business, or use the new-business signup form.
 
 ```mermaid
 flowchart LR
-    A[Create Django user] --> B[Create Business]
-    B --> C[Assign owner=user]
-    C --> D[Login in React UI]
-    D --> E[API permission passes]
+    A[Submit signup form] --> B[Create Django user]
+    B --> C[Create Business]
+    C --> D[Assign owner=user]
+    D --> E[Auto sign in]
+    E --> F[API permission passes]
 ```
 
 ## Testing process
@@ -69,6 +79,7 @@ make test
 
 Current backend tests cover:
 
+- business-owner signup;
 - tenant-scoped customer listing;
 - cross-tenant customer detail protection;
 - customer creation business assignment;

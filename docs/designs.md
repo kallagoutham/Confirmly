@@ -5,6 +5,7 @@
 The implemented product is currently a staff-facing daily desk:
 
 - sign in with a Django user;
+- create a new business owner account;
 - view basic metrics;
 - create/search customers;
 - create/search/filter appointments;
@@ -100,6 +101,7 @@ Current API resources:
 ```text
 /api/customers/
 /api/customers/{id}/
+/api/businesses/signup/
 /api/appointments/
 /api/appointments/{id}/
 /api/appointments/{id}/timeline/

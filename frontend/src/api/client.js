@@ -15,31 +15,71 @@ export function createApiClient(auth) {
   }
 
   return {
-    getCustomers: (search = "") => request(`/customers/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
-    createCustomer: (payload) => request("/customers/", { method: "POST", body: JSON.stringify(payload) }),
+    getCustomers: (search = "") =>
+      request(`/customers/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
+    createCustomer: (payload) =>
+      request("/customers/", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     getAppointments: ({ search = "", status = "" } = {}) => {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (status) params.set("status", status);
       params.set("ordering", "scheduled_at");
-      return request(`/appointments/${params.toString() ? `?${params.toString()}` : ""}`);
+      return request(
+        `/appointments/${params.toString() ? `?${params.toString()}` : ""}`,
+      );
     },
-    createAppointment: (payload) => request("/appointments/", { method: "POST", body: JSON.stringify(payload) }),
-    updateAppointment: (id, payload) => request(`/appointments/${id}/`, { method: "PATCH", body: JSON.stringify(payload) }),
+    createAppointment: (payload) =>
+      request("/appointments/", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    updateAppointment: (id, payload) =>
+      request(`/appointments/${id}/`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
     getTimeline: (id) => request(`/appointments/${id}/timeline/`),
+    getProfile: () => request("/businesses/me/"),
+    createBusiness: (payload) =>
+      request("/businesses/", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
   };
+}
+
+export async function signupBusiness(payload) {
+  return parseResponse(
+    await fetch(`${API_BASE}/businesses/signup/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }),
+  );
 }
 
 async function parseResponse(response) {
   const contentType = response.headers.get("content-type") || "";
-  const data = contentType.includes("application/json") ? await response.json() : null;
+  const data = contentType.includes("application/json")
+    ? await response.json()
+    : null;
   if (!response.ok) {
     const message =
       data?.detail ||
       Object.entries(data || {})
-        .map(([field, value]) => `${field}: ${Array.isArray(value) ? value.join(", ") : value}`)
+        .map(
+          ([field, value]) =>
+            `${field}: ${Array.isArray(value) ? value.join(", ") : value}`,
+        )
         .join(" ");
-    throw new Error(message || `Request failed with ${response.status}`);
+    const error = new Error(message || `Request failed with ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
   return data;
 }

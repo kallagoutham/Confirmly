@@ -8,7 +8,7 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
-import { createApiClient } from "./api/client";
+import { createApiClient, signupBusiness } from "./api/client";
 import { AppSidebar } from "./components/AppSidebar";
 import { Banner } from "./components/Banner";
 import { EmptyState } from "./components/EmptyState";
@@ -25,13 +25,21 @@ import {
   toBasicAuth,
 } from "./utils/auth";
 
+const DEFAULT_SIGNUP_FORM = {
+  business_name: "",
+  username: "",
+  email: "",
+  password: "",
+  timezone: "America/New_York",
+};
+
+const DEFAULT_THEME = "system";
+
 export default function App() {
   const [credentials, setCredentials] = useState(loadSavedCredentials);
-  const [auth, setAuth] = useState(() =>
-    credentials.username && credentials.password
-      ? toBasicAuth(credentials.username, credentials.password)
-      : "",
-  );
+  const [auth, setAuth] = useState("");
+  const [profile, setProfile] = useState(null);
+  const [theme, setTheme] = useState(DEFAULT_THEME);
   const [customers, setCustomers] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [customerSearch, setCustomerSearch] = useState("");
@@ -42,6 +50,8 @@ export default function App() {
     email: "",
     phone: "",
   });
+  const [signupMode, setSignupMode] = useState(false);
+  const [signupForm, setSignupForm] = useState(DEFAULT_SIGNUP_FORM);
   const [appointmentForm, setAppointmentForm] = useState(emptyAppointmentForm);
   const [timeline, setTimeline] = useState({ appointment: null, events: [] });
   const [loading, setLoading] = useState(false);
@@ -54,14 +64,30 @@ export default function App() {
     [customers, appointments],
   );
 
-  async function loadData() {
-    if (!auth) return;
+  function resetSession({ clearCredentials = false } = {}) {
+    removeSavedCredentials();
+    setAuth("");
+    setProfile(null);
+    setCustomers([]);
+    setAppointments([]);
+    setTimeline({ appointment: null, events: [] });
+    if (clearCredentials) {
+      setCredentials({ username: "", password: "" });
+    }
+  }
+
+  function hasOwnedBusiness(nextProfile) {
+    return (nextProfile?.businesses || []).length > 0;
+  }
+
+  async function loadData(client = api) {
+    if (!auth && client === api) return;
     setLoading(true);
     setError("");
     try {
       const [customerData, appointmentData] = await Promise.all([
-        api.getCustomers(customerSearch),
-        api.getAppointments({
+        client.getCustomers(customerSearch),
+        client.getAppointments({
           search: appointmentSearch,
           status: statusFilter,
         }),
@@ -76,23 +102,87 @@ export default function App() {
   }
 
   useEffect(() => {
-    loadData();
+    async function restoreSavedSession() {
+      if (!credentials.username || !credentials.password || auth) return;
+      const savedAuth = toBasicAuth(credentials.username, credentials.password);
+      const savedApi = createApiClient(savedAuth);
+      try {
+        const nextProfile = await savedApi.getProfile();
+        if (!hasOwnedBusiness(nextProfile)) {
+          resetSession({ clearCredentials: true });
+          setError(
+            "That saved user does not own a business. Sign in with a business owner account.",
+          );
+          return;
+        }
+        setProfile(nextProfile);
+        setAuth(savedAuth);
+      } catch (err) {
+        resetSession({ clearCredentials: true });
+        setError("Saved sign-in expired or is invalid. Please sign in again.");
+      }
+    }
+
+    restoreSavedSession();
+  }, []);
+
+  useEffect(() => {
+    if (auth && profile) loadData();
   }, [auth, statusFilter]);
 
-  function login(event) {
+  async function login(event) {
     event.preventDefault();
     const nextAuth = toBasicAuth(credentials.username, credentials.password);
-    saveCredentials(credentials);
-    setAuth(nextAuth);
-    setNotice("Signed in for this browser.");
+    const nextApi = createApiClient(nextAuth);
+    setError("");
+    try {
+      const nextProfile = await nextApi.getProfile();
+      if (!hasOwnedBusiness(nextProfile)) {
+        resetSession({ clearCredentials: true });
+        setError(
+          "This user does not own a business. Sign in with the business owner username.",
+        );
+        return;
+      }
+      setProfile(nextProfile);
+      setAuth(nextAuth);
+      setSignupMode(false);
+      saveCredentials(credentials);
+      setNotice("Signed in for this browser.");
+      await loadData(nextApi);
+    } catch (err) {
+      resetSession({ clearCredentials: true });
+      setError(err.message);
+    }
   }
 
   function logout() {
-    removeSavedCredentials();
-    setAuth("");
-    setCustomers([]);
-    setAppointments([]);
-    setTimeline({ appointment: null, events: [] });
+    resetSession({ clearCredentials: true });
+  }
+
+  async function signup(event) {
+    event.preventDefault();
+    setError("");
+    try {
+      const result = await signupBusiness(signupForm);
+      const nextCredentials = {
+        username: signupForm.username,
+        password: signupForm.password,
+      };
+      const nextProfile = {
+        ...result.user,
+        businesses: [result.business],
+      };
+      saveCredentials(nextCredentials);
+      setCredentials(nextCredentials);
+      setProfile(nextProfile);
+      setAuth(toBasicAuth(nextCredentials.username, nextCredentials.password));
+      setSignupForm(DEFAULT_SIGNUP_FORM);
+      setSignupMode(false);
+      setNotice("Business account created.");
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   async function createCustomer(event) {
@@ -151,7 +241,7 @@ export default function App() {
   }
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell theme-${theme}`}>
       <AppSidebar
         auth={auth}
         credentials={credentials}
@@ -175,6 +265,14 @@ export default function App() {
         onCredentialsChange={setCredentials}
         onLogin={login}
         onLogout={logout}
+        onSignup={signup}
+        onSignupChange={setSignupForm}
+        onSignupModeChange={setSignupMode}
+        onThemeChange={setTheme}
+        profile={profile}
+        signupForm={signupForm}
+        signupMode={signupMode}
+        theme={theme}
       />
 
       <section className="workspace">
@@ -183,7 +281,7 @@ export default function App() {
           subtitle="Keep the customer list clean and appointments moving."
           action={
             <IconButton
-              disabled={!auth || loading}
+              disabled={!auth || !profile || loading}
               onClick={loadData}
               title="Refresh"
             >
@@ -205,11 +303,11 @@ export default function App() {
           </Banner>
         )}
 
-        {!auth ? (
+        {!auth || !profile ? (
           <EmptyState
             icon={<UserRound size={42} />}
             title="Sign in with your Django user"
-            message="Create a superuser and business in admin, then use those credentials here."
+            message="Use a business owner account. Users without a business are signed out automatically."
           />
         ) : (
           <div className="content-grid">

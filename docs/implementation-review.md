@@ -9,7 +9,7 @@ Estimated implementation against the full MVP in `requirements/requirements.md`:
 | Area | Status | Notes |
 |---|---:|---|
 | Django project setup | Implemented | Settings, URLs, installed apps, REST framework config, SQLite/PostgreSQL switching. |
-| Multi-tenant business ownership | Mostly implemented | `Business.owner` is one-to-one with Django user; permissions require a business. Staff roles are not implemented. |
+| Multi-tenant business ownership | Mostly implemented | Business signup creates a Django user and linked `Business`; permissions require a business. Staff roles are not implemented. |
 | Customer CRUD | Mostly implemented | API supports tenant-scoped create/list/detail/update/delete through `ModelViewSet`; frontend supports create/list/search. |
 | Appointment CRUD | Partially implemented | API supports list/create/retrieve/patch; delete disabled; frontend supports create/list/search/filter/timeline. |
 | Appointment status lifecycle | Minimal | Status exists but is read-only through serializer. No confirm/cancel/complete/no-show actions yet. |
@@ -28,6 +28,8 @@ Estimated implementation against the full MVP in `requirements/requirements.md`:
 ### Backend
 
 - Uses Django and Django REST Framework.
+- Supports public business-owner signup through `/api/businesses/signup/`.
+- Supports creating a business for an already-authenticated user through `/api/businesses/`.
 - Supports Django user authentication with session and basic auth.
 - Requires authenticated users to have a related `Business`.
 - Scopes customer and appointment querysets to `request.user.business`.
@@ -47,6 +49,15 @@ Estimated implementation against the full MVP in `requirements/requirements.md`:
   - `created` when an appointment is created;
   - `updated` when editable appointment fields change.
 - Exposes appointment timeline through `/api/appointments/{id}/timeline/`.
+
+### Signup/onboarding
+
+- Creates a Django user and linked business in one database transaction.
+- Rejects duplicate usernames case-insensitively.
+- Rejects duplicate owner emails case-insensitively when email is provided.
+- Enforces a minimum password length of 8 characters.
+- Frontend signs the new owner in after successful signup.
+- Existing authenticated users without a business can create one from the sidebar setup form.
 
 ### Frontend
 

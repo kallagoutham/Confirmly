@@ -1,5 +1,23 @@
 # Workflows
 
+## Implemented: business signup
+
+```mermaid
+sequenceDiagram
+    actor Owner
+    participant UI as React Signup Form
+    participant API as POST /api/businesses/signup/
+    participant DB as Database
+
+    Owner->>UI: Enter business and owner credentials
+    UI->>API: Submit signup request
+    API->>DB: Create Django user
+    API->>DB: Create Business owned by user
+    API-->>UI: 201 Created
+    UI->>UI: Save credentials and set Basic auth
+    UI-->>Owner: Show Daily Desk
+```
+
 ## Implemented: authenticated staff data flow
 
 ```mermaid
@@ -19,6 +37,25 @@ sequenceDiagram
     DB-->>API: Tenant-scoped records
     API-->>UI: Paginated JSON
     UI-->>Staff: Render desk
+```
+
+## Implemented: reject signed-in users without a business
+
+```mermaid
+sequenceDiagram
+    actor Owner
+    participant UI as React app
+    participant API as GET /api/businesses/me/
+
+    Owner->>UI: Signs in with existing Django user
+    UI->>API: Validate current profile
+    API-->>UI: User profile with businesses array
+    alt user owns at least one business
+        UI-->>Owner: Show dashboard and profile sidebar
+    else user owns no businesses
+        UI->>UI: Clear saved credentials
+        UI-->>Owner: Show sign-in form and error
+    end
 ```
 
 ## Implemented: customer creation

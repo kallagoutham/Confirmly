@@ -158,7 +158,63 @@ Currently produced by code:
 
 ## Current API schemas
 
-All current business APIs require authentication and a related `Business`.
+Most current business APIs require authentication and a related `Business`.
+The signup endpoint is public so a new owner can create the initial business.
+
+### Business signup request
+
+```json
+{
+  "business_name": "Northside Studio",
+  "username": "northside",
+  "email": "owner@example.com",
+  "password": "safe-test-pass",
+  "timezone": "America/New_York"
+}
+```
+
+### Business signup response
+
+```json
+{
+  "user": {
+    "id": 1,
+    "username": "northside",
+    "email": "owner@example.com"
+  },
+  "business": {
+    "id": 1,
+    "name": "Northside Studio",
+    "timezone": "America/New_York"
+  }
+}
+```
+
+### Create business for current authenticated user
+
+```json
+{
+  "name": "Existing Owner Studio",
+  "timezone": "America/Chicago"
+}
+```
+
+Response:
+
+```json
+{
+  "id": 1,
+  "name": "Existing Owner Studio",
+  "timezone": "America/Chicago",
+  "created_at": "2026-07-14T10:00:00Z"
+}
+```
+
+Notes:
+
+- Requires authentication.
+- Does not require the user to already have a business.
+- Rejects users who already have a business.
 
 ### Customer response
 
